@@ -1,0 +1,15 @@
+- name: Set hostname according to inventory_hostname.
+  shell: nmcli general hostname {{ inventory_hostname }}; hostname {{ inventory_hostname }}
+  when:
+    - ansible_facts['distribution'] == "CentOS"
+    - ansible_facts['distribution_major_version'] == "8"
+
+- name: "Create /etc/hosts"
+  template:
+    src: templates/etc_hosts.j2
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: '0644'
+  register: role_bi_hostname_etc_hosts
+
