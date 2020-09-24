@@ -1,8 +1,22 @@
-- name: Set hostname according to inventory_hostname.
+- name: Set hostname according to inventory_hostname CentOS.
   shell: nmcli general hostname {{ inventory_hostname }}; hostname {{ inventory_hostname }}
   when:
     - ansible_facts['distribution'] == "CentOS"
     - ansible_facts['distribution_major_version'] == "8" or ansible_facts['distribution_major_version'] == "7"
+
+- name: Change hostname according to inventory-hostname for Debian system.
+  template:
+    src: templates/etc_hostname.j2
+    dest: /etc/hostname
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Set hostname according to inventory_hostname Debian.
+  shell: nmcli general hostname {{ inventory_hostname }}; hostname {{ inventory_hostname }}
+  when:
+    - ansible_facts['distribution'] == "Debian"
+    - ansible_facts['distribution_major_version'] == "8"
 
 - name: "Create /etc/hosts"
   template:
@@ -11,5 +25,3 @@
     owner: root
     group: root
     mode: '0644'
-  register: role_bi_hostname_etc_hosts
-

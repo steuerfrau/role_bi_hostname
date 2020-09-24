@@ -1,0 +1,6 @@
+---
+# defaults file for role_bi_hostname/
+role_bi_hostname_default_domain: "localnet"
+role_bi_hostname_etc_hosts_entries:
+  "127.0.0.1": "localhost localhost.localdomain localhost4 localhost4.localdomain4"
+  "::1": "localhost localhost.localdomain localhost6 localhost6.localdomain6"

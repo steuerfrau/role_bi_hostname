@@ -1,16 +1,6 @@
-{% if hostvars[inventory_hostname]['role_bi_hostname.etc_hosts_entries'] is defined %}
-{% for key, value in hostvars[inventory_hostname]['role_bi_hostname.etc_hosts_entries'].items() %}
+{% for key, value in role_bi_hostname_etc_hosts_entries.items() %}
 {{ key }} {{ value }}
 {% endfor %}
-{% if hostvars[inventory_hostname]['ansible_default_ipv4']['address'] not in hostvars[inventory_hostname]['role_bi_hostname.etc_hosts_entries'] %}
-{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} {{ inventory_hostname }}.{{ hostvars[inventory_hostname]['role_bi_hostname.default_domain'] }} {{ inventory_hostname }} 
+{% if ansible_default_ipv4['address'] not in role_bi_hostname_etc_hosts_entries %}
+{{ ansible_default_ipv4['address'] }} {{ inventory_hostname }}.{{ role_bi_hostname_default_domain }} {{ inventory_hostname }} 
 {% endif %}
-{% else %}
-{% for key, value in hostvars[inventory_hostname]['role_bi_hostname.etc_hosts_entries_default'].items() %}
-{{ key }} {{ value }}
-{% endfor %}
-{% if hostvars[inventory_hostname]['ansible_default_ipv4']['address'] not in hostvars[inventory_hostname]['role_bi_hostname.etc_hosts_entries_default'] %}
-{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} {{ inventory_hostname }}.{{ hostvars[inventory_hostname]['role_bi_hostname.default_domain'] }} {{ inventory_hostname }} 
-{% endif %}
-{% endif %}
-
