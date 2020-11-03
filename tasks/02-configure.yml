@@ -1,21 +1,51 @@
-- name: Set hostname according to inventory_hostname CentOS.
-  shell: nmcli general hostname {{ inventory_hostname }}; hostname {{ inventory_hostname }}
-  when: (ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "7") or
-        (ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "8")
+- name: Determine IP address of ansible management host
+  set_fact:
+    role_bi_hostname_tmp_ansible_host_ip: '{{ ansible_env["SSH_CLIENT"].split()[0] }}'
 
-- block:
-    - name: Configure hostname according to inventory-hostname for Debian system.
-      template:
-        src: templates/etc_hostname.j2
-        dest: /etc/hostname
-        owner: root
-        group: root
-        mode: '0644'
-    - name: Set hostname according to inventory_hostname Debian.
-      shell: nmcli general hostname {{ inventory_hostname }}; hostname {{ inventory_hostname }}
-  when: (ansible_facts['distribution'] == "Debian" and ansible_facts['distribution_major_version'] == "8") or
-        (ansible_facts['distribution'] == "Debian" and ansible_facts['distribution_major_version'] == "10") or
-        (ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_version'] == "14.04")
+- name: Query hostname to host IPv4 address
+  set_fact:
+    role_bi_hostname_tmp_dns_ptr_name_ipv4: '{{ lookup("community.general.dig", ansible_default_ipv4["address"] + "/PTR", "@" + role_bi_hostname_tmp_ansible_host_ip) | regex_replace("\.$", "") if "address" in ansible_default_ipv4 | default(false) else ""}}'
+
+- name: Query hostname to host IPv6 address
+  set_fact:
+    role_bi_hostname_tmp_dns_ptr_name_ipv6: '{{ lookup("community.general.dig", ansible_default_ipv6["address"] + "/PTR", "@" + role_bi_hostname_tmp_ansible_host_ip) | regex_replace("\.$", "") if "address" in ansible_default_ipv6 | default(false) else ""}}'
+
+- name: Generate error when ipv4 and ipv6 hostnames differ
+  fail:
+    msg: The ipv4 and ipv6 reverse names to this hosts IP differ.
+  when:
+    - role_bi_hostname_tmp_dns_ptr_name_ipv4 != ""
+    - role_bi_hostname_tmp_dns_ptr_name_ipv6 != ""
+    - role_bi_hostname_tmp_dns_ptr_name_ipv4 != role_bi_hostname_tmp_dns_ptr_name_ipv6
+
+- name: Generate error when there is not reverse DNS hostname for ipv4 and ipv6
+  fail:
+    msg: There can no reverse DNS hostname be found for this hosts IP
+  when:
+    - role_bi_hostname_tmp_dns_ptr_name_ipv4 == ""
+    - role_bi_hostname_tmp_dns_ptr_name_ipv6 == ""
+
+- name: Select definite fqdn
+  set_fact:
+    role_bi_hostname_tmp_fqdn: '{{ role_bi_hostname_tmp_dns_ptr_name_ipv4 if role_bi_hostname_tmp_dns_ptr_name_ipv4 != "" else role_bi_hostname_tmp_dns_ptr_name_ipv6 }}'
+
+- name: Set short hostname
+  set_fact:
+    role_bi_hostname_tmp_short_hostname: '{{ role_bi_hostname_tmp_fqdn.split(".")[0] }}'
+
+- name: Generate warning, when there are differences between inventory_hostname, ansible_hostname and DNS PTR
+  fail:
+    msg: 'Inconsistent naming: ansible_hostname = "{{ ansible_hostname }}" inventory_hostname = "{{inventory_hostname}}" role_bi_hostname_tmp_short_hostname = "{{ role_bi_hostname_tmp_short_hostname }}"'
+  when:
+    - ansible_hostname != inventory_hostname or ansible_hostname != role_bi_hostname_tmp_short_hostname or inventory_hostname != role_bi_hostname_tmp_short_hostname
+
+- name: debug
+  debug:
+    var: role_bi_hostname_tmp_dns_ptr_name_ipv4
+
+- name: Set hostname on host
+  hostname:
+    name: '{{ role_bi_hostname_tmp_short_hostname }}'
 
 - name: "Create /etc/hosts"
   template:

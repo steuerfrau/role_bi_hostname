@@ -1,6 +1,9 @@
 {% for key, value in role_bi_hostname_etc_hosts_entries.items() %}
 {{ key }} {{ value }}
 {% endfor %}
-{% if ansible_default_ipv4['address'] not in role_bi_hostname_etc_hosts_entries %}
-{{ ansible_default_ipv4['address'] }} {{ inventory_hostname }}.{{ role_bi_hostname_default_domain }} {{ inventory_hostname }} 
+{% if 'address' in ansible_default_ipv4 and ansible_default_ipv4['address'] not in role_bi_hostname_etc_hosts_entries %}
+{{ ansible_default_ipv4['address'] }} {{ role_bi_hostname_tmp_fqdn }} {{ role_bi_hostname_tmp_short_hostname }}
+{% endif %}
+{% if 'address' in ansible_default_ipv6 and ansible_default_ipv6['address'] not in role_bi_hostname_etc_hosts_entries %}
+{{ ansible_default_ipv6['address'] }} {{ inventory_hostname }}.{{ role_bi_hostname_default_domain }} {{ inventory_hostname }}
 {% endif %}

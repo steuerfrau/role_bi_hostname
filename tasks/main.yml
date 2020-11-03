@@ -3,10 +3,9 @@
 - name: Include os independent variables.
   include_vars: "vars/main.yml"
 
-- name: Display all variables/facts known for a host
-  debug:
-    var: hostvars[inventory_hostname]
-  tags: [ never, debug ]
+# - name: Display all variables/facts known for a host
+#   debug:
+#     var: hostvars[inventory_hostname]
 
 - name: Configure role_bi_hostname
   include: 02-configure.yml
