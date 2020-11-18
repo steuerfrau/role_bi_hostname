@@ -1,14 +1,10 @@
-- name: Determine IP address of ansible management host
-  set_fact:
-    role_bi_hostname_tmp_ansible_host_ip: '{{ ansible_env["SSH_CLIENT"].split()[0] }}'
-
 - name: Query hostname to host IPv4 address
   set_fact:
-    role_bi_hostname_tmp_dns_ptr_name_ipv4: '{{ lookup("community.general.dig", ansible_default_ipv4["address"] + "/PTR", "@" + role_bi_hostname_tmp_ansible_host_ip) | regex_replace("\.$", "") if "address" in ansible_default_ipv4 | default(false) else ""}}'
+    role_bi_hostname_tmp_dns_ptr_name_ipv4: '{{ lookup("community.general.dig", ansible_default_ipv4["address"] + "/PTR") | regex_replace("\.$", "") if "address" in ansible_default_ipv4 | default(false) else ""}}'
 
 - name: Query hostname to host IPv6 address
   set_fact:
-    role_bi_hostname_tmp_dns_ptr_name_ipv6: '{{ lookup("community.general.dig", ansible_default_ipv6["address"] + "/PTR", "@" + role_bi_hostname_tmp_ansible_host_ip) | regex_replace("\.$", "") if "address" in ansible_default_ipv6 | default(false) else ""}}'
+    role_bi_hostname_tmp_dns_ptr_name_ipv6: '{{ lookup("community.general.dig", ansible_default_ipv6["address"] + "/PTR") | regex_replace("\.$", "") if "address" in ansible_default_ipv6 | default(false) else ""}}'
 
 - name: Generate error when ipv4 and ipv6 hostnames differ
   fail:
@@ -33,11 +29,15 @@
   set_fact:
     role_bi_hostname_tmp_short_hostname: '{{ role_bi_hostname_tmp_fqdn.split(".")[0] }}'
 
-- name: Generate warning, when there are differences between inventory_hostname, ansible_hostname and DNS PTR
+- name: Set short inventory_hostname
+  set_fact:
+    role_bi_hostname_tmp_short_inventory_hostname: '{{ inventory_hostname.split(".")[0] }}'
+
+- name: Generate fail, when there are differences between inventory_hostname, ansible_hostname and DNS PTR
   fail:
-    msg: 'Inconsistent naming: inventory_hostname = "{{inventory_hostname}}" role_bi_hostname_tmp_short_hostname = "{{ role_bi_hostname_tmp_short_hostname }}"'
+    msg: 'Inconsistent naming: hostname portion inventory_hostname = "{{role_bi_hostname_tmp_short_inventory_hostname}}" role_bi_hostname_tmp_short_hostname = "{{ role_bi_hostname_tmp_short_hostname }}"'
   when:
-    - inventory_hostname != role_bi_hostname_tmp_short_hostname
+    - role_bi_hostname_tmp_short_inventory_hostname != role_bi_hostname_tmp_short_hostname
 
 - name: debug
   debug:
